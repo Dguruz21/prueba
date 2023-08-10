@@ -15,6 +15,9 @@ Route::post('login', [AuthController::class,'login']);
 Route::post('logout', [AuthController::class,'logout']);
 Route::post('refresh', [AuthController::class,'refresh']);
 Route::post('me', [AuthController::class,'me']);
+Route::get('get-date', function(){
+    return date('Y-m-d H:i:s');
+});
 
 Route::apiResource('companies', CompanyController::class)->middleware('auth:api');
 
