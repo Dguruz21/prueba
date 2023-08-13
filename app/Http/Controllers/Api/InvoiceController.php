@@ -63,6 +63,6 @@ class InvoiceController extends Controller
       $data['subTotal'] = $data['valorVenta'] + $data['mtoIGV'];
       $data['mtoImpVenta'] = floor($data['subTotal'] * 10) / 10;
       $data['redondeo'] = $data['mtoImpVenta'] - $data['subTotal'];
-      //hola
+      //hola que tal
    }
 }
