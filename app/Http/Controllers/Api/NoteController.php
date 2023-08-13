@@ -147,7 +147,13 @@ class NoteController extends Controller
          $response['xml'] = $see->getXmlSigned($note);
          $hash = (new XmlUtils())->getHashSign($response['xml']);
 
-         return $sunat->getHtmlReport($note, $rucEmisor, $hash);
+         if (Storage::exists("logos/{$rucEmisor}.png")) {
+            return $sunat->getHtmlReport($note, $rucEmisor, $hash);
+         } else {
+            return response()->json([
+               'error' => 'No se encontró el logo para el RUC: ' . $rucEmisor
+            ]);
+         }
 
       } else {
          return response()->json([

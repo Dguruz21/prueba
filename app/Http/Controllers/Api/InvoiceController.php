@@ -51,9 +51,7 @@ class InvoiceController extends Controller
          $result = $see->send($invoice);
 
          $response['xml'] = $see->getFactory()->getLastXml();
-
          $response['hash'] = (new XmlUtils())->getHashSign($response['xml']);
-
          $response['sunatResponse'] = $sunat->sunatResponse($result);
 
          return response()->json($response, 200);
@@ -146,7 +144,13 @@ class InvoiceController extends Controller
          $response['xml'] = $see->getXmlSigned($invoice);
          $hash = (new XmlUtils())->getHashSign($response['xml']);
 
-         return $sunat->getHtmlReport($invoice, $rucEmisor, $hash);
+         if (Storage::exists("logos/{$rucEmisor}.png")) {
+            return $sunat->getHtmlReport($invoice, $rucEmisor, $hash);
+         } else {
+            return response()->json([
+               'error' => 'No se encontró el logo para el RUC: ' . $rucEmisor
+            ]);
+         }
 
       } else {
          return response()->json([
