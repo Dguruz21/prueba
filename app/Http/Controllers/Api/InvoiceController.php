@@ -19,8 +19,8 @@ class InvoiceController extends Controller
       $data = request()->all();
 
       $certificate = $request->certProduction ?
-         Storage::path('certs/prod/PRODUCCION.txt') :
-         Storage::path('certs/desa/DESARROLLO.txt');
+         Storage::path('storage/app/public/certs/prod/PRODUCCION.txt') :
+         Storage::path('storage/app/public/certs/desa/DESARROLLO.txt');
 
       $isDevelopment = !$request->certProduction;
 
