@@ -1,129 +1,67 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-use Greenter\Ws\Services\SunatEndpoints;
-use Greenter\See;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Greenter\Report\XmlUtils;
 
-use DateTime;
-use Greenter\Model\Client\Client;
-use Greenter\Model\Company\Company;
-use Greenter\Model\Company\Address;
-use Greenter\Model\Sale\FormaPagos\FormaPagoContado;
-use Greenter\Model\Sale\Invoice;
-use Greenter\Model\Sale\SaleDetail;
-use Greenter\Model\Sale\Legend;
+use App\Services\SunatService;
+use Illuminate\Support\Facades\Storage;
+
 
 
 class InvoiceController extends Controller
 {
-    public function send(Request $request){
+   public function send(Request $request)
+   {
 
-      $certificate = request()->file('cert');
+      $data = request()->all();
 
-      $see = new See();
-      $see->setCertificate(file_get_contents($certificate));
-      $see->setService(SunatEndpoints::FE_BETA);
-      $see->setClaveSOL('20000000001', 'MODDATOS', 'moddatos');
+      $certificate = $request->certProduction ?
+         Storage::path('certs/prod/PRODUCCION.txt') :
+         Storage::path('certs/desa/DESARROLLO.txt');
 
-// Cliente
-$client = (new Client())
-    ->setTipoDoc('6')
-    ->setNumDoc('20000000001')
-    ->setRznSocial('EMPRESA X');
+      $isDevelopment = !$request->certProduction;
 
-// Emisor
-$address = (new Address())
-    ->setUbigueo('150101')
-    ->setDepartamento('LIMA')
-    ->setProvincia('LIMA')
-    ->setDistrito('LIMA')
-    ->setUrbanizacion('-')
-    ->setDireccion('Av. Villa Nueva 221')
-    ->setCodLocal('0000'); // Codigo de establecimiento asignado por SUNAT, 0000 por defecto.
+      $rucEmisor = $request['company']['ruc'];
 
-$company = (new Company())
-    ->setRuc('20123456789')
-    ->setRazonSocial('GREEN SAC')
-    ->setNombreComercial('GREEN')
-    ->setAddress($address);
 
-// Venta
-$invoice = (new Invoice())
-    ->setUblVersion('2.1')
-    ->setTipoOperacion('0101') // Venta - Catalog. 51
-    ->setTipoDoc('01') // Factura - Catalog. 01 
-    ->setSerie('F001')
-    ->setCorrelativo('1')
-    ->setFechaEmision(new DateTime('2020-08-24 13:05:00-05:00')) // Zona horaria: Lima
-    ->setFormaPago(new FormaPagoContado()) // FormaPago: Contado
-    ->setTipoMoneda('PEN') // Sol - Catalog. 02
-    ->setCompany($company)
-    ->setClient($client)
-    ->setMtoOperGravadas(100.00)
-    ->setMtoIGV(18.00)
-    ->setTotalImpuestos(18.00)
-    ->setValorVenta(100.00)
-    ->setSubTotal(118.00)
-    ->setMtoImpVenta(118.00)
-    ;
+      $this->setTotales($data);
 
-$item = (new SaleDetail())
-    ->setCodProducto('P001')
-    ->setUnidad('NIU') // Unidad - Catalog. 03
-    ->setCantidad(2)
-    ->setMtoValorUnitario(50.00)
-    ->setDescripcion('PRODUCTO 1')
-    ->setMtoBaseIgv(100)
-    ->setPorcentajeIgv(18.00) // 18%
-    ->setIgv(18.00)
-    ->setTipAfeIgv('10') // Gravado Op. Onerosa - Catalog. 07
-    ->setTotalImpuestos(18.00) // Suma de impuestos en el detalle
-    ->setMtoValorVenta(100.00)
-    ->setMtoPrecioUnitario(59.00)
-    ;
+      $sunat = new SunatService();
 
-$legend = (new Legend())
-    ->setCode('1000') // Monto en letras - Catalog. 52
-    ->setValue('SON DOSCIENTOS TREINTA Y SEIS CON 00/100 SOLES');
+      $see = $sunat->getSee($certificate, $isDevelopment, $rucEmisor);
 
-$invoice->setDetails([$item])
-        ->setLegends([$legend]);
+      $invoice = $sunat->getInvoice($data);
 
-$result = $see->send($invoice);
+      $result = $see->send($invoice);
 
-// Verificamos que la conexión con SUNAT fue exitosa.
-if (!$result->isSuccess()) {
-    // Mostrar error al conectarse a SUNAT.
-    echo 'Codigo Error: '.$result->getError()->getCode();
-    echo 'Mensaje Error: '.$result->getError()->getMessage();
-    exit();
-}
+      $response['xml'] = $see->getFactory()->getLastXml();
 
-// Guardamos el CDR
-// file_put_contents('R-'.$invoice->getName().'.zip', $result->getCdrZip());
+      $response['hash'] = (new XmlUtils())->getHashSign($response['xml']);
 
-   $cdr = $result->getCdrResponse();
+      $response['sunatResponse'] = $sunat->sunatResponse($result);
 
-$code = (int)$cdr->getCode();
+      return response()->json($response, 200);
 
-if ($code === 0) {
-    echo 'ESTADO: ACEPTADA'.PHP_EOL;
-    if (count($cdr->getNotes()) > 0) {
-        echo 'OBSERVACIONES:'.PHP_EOL;
-        // Corregir estas observaciones en siguientes emisiones.
-        var_dump($cdr->getNotes());
-    }  
-} else if ($code >= 2000 && $code <= 3999) {
-    echo 'ESTADO: RECHAZADA'.PHP_EOL;
-} else {
-    /* Esto no debería darse, pero si ocurre, es un CDR inválido que debería tratarse como un error-excepción. */
-    /*code: 0100 a 1999 */
-    echo 'Excepción';
-}
+   }
 
-echo $cdr->getDescription().PHP_EOL;
+   public function setTotales(&$data)
+   {
+      $details = collect($data['details']);
+      $data['mtoOperGravadas'] = $details->where('tipAfeIgv', 10)->sum('mtoValorVenta');
+      $data['mtoOperExoneradas'] = $details->where('tipAfeIgv', 20)->sum('mtoValorVenta');
+      $data['mtoOperInafectas'] = $details->where('tipAfeIgv', 30)->sum('mtoValorVenta');
+      $data['mtoOperExportacion'] = $details->where('tipAfeIgv', 40)->sum('mtoValorVenta');
+      $data['mtoOperGratuitas'] = $details->whereNotIn('tipAfeIgv', [10, 20, 30, 40])->sum('mtoValorVenta');
 
-    }
+      $data['mtoIGV'] = $details->whereIn('tipAfeIgv', [10, 20, 30, 40])->sum('igv');
+      $data['mtoIGVGratuitas'] = $details->whereNotIn('tipAfeIgv', [10, 20, 30, 40])->sum('igv');
+      $data['totalImpuestos'] = $data['mtoIGV'];
+      $data['valorVenta'] = $details->whereIn('tipAfeIgv', [10, 20, 30, 40])->sum('mtoValorVenta');
+      $data['subTotal'] = $data['valorVenta'] + $data['mtoIGV'];
+      $data['mtoImpVenta'] = floor($data['subTotal'] * 10) / 10;
+      $data['redondeo'] = $data['mtoImpVenta'] - $data['subTotal'];
+   }
 }
