@@ -119,6 +119,7 @@ class ComposerStaticInit4899af2d78528f73d1063d2f816446a0
         ),
         'L' => 
         array (
+            'Luecano\\NumeroALetras\\' => 22,
             'League\\MimeTypeDetection\\' => 25,
             'League\\Flysystem\\' => 17,
             'League\\Config\\' => 14,
@@ -387,6 +388,10 @@ class ComposerStaticInit4899af2d78528f73d1063d2f816446a0
         array (
             0 => __DIR__ . '/..' . '/mockery/mockery/library/Mockery',
         ),
+        'Luecano\\NumeroALetras\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/luecano/numero-a-letras/src',
+        ),
         'League\\MimeTypeDetection\\' => 
         array (
             0 => __DIR__ . '/..' . '/league/mime-type-detection/src',
@@ -456,9 +461,9 @@ class ComposerStaticInit4899af2d78528f73d1063d2f816446a0
         array (
             0 => __DIR__ . '/..' . '/greenter/core/src/Core',
             1 => __DIR__ . '/..' . '/greenter/lite/src/Greenter',
-            2 => __DIR__ . '/..' . '/greenter/ws/src',
-            3 => __DIR__ . '/..' . '/greenter/xml/src',
-            4 => __DIR__ . '/..' . '/greenter/report/src',
+            2 => __DIR__ . '/..' . '/greenter/report/src',
+            3 => __DIR__ . '/..' . '/greenter/ws/src',
+            4 => __DIR__ . '/..' . '/greenter/xml/src',
         ),
         'GrahamCampbell\\ResultType\\' => 
         array (
@@ -3374,6 +3379,7 @@ class ComposerStaticInit4899af2d78528f73d1063d2f816446a0
         'League\\MimeTypeDetection\\GeneratedExtensionToMimeTypeMap' => __DIR__ . '/..' . '/league/mime-type-detection/src/GeneratedExtensionToMimeTypeMap.php',
         'League\\MimeTypeDetection\\MimeTypeDetector' => __DIR__ . '/..' . '/league/mime-type-detection/src/MimeTypeDetector.php',
         'League\\MimeTypeDetection\\OverridingExtensionToMimeTypeMap' => __DIR__ . '/..' . '/league/mime-type-detection/src/OverridingExtensionToMimeTypeMap.php',
+        'Luecano\\NumeroALetras\\NumeroALetras' => __DIR__ . '/..' . '/luecano/numero-a-letras/src/NumeroALetras.php',
         'Mockery\\Adapter\\Phpunit\\MockeryPHPUnitIntegration' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/Adapter/Phpunit/MockeryPHPUnitIntegration.php',
         'Mockery\\Adapter\\Phpunit\\MockeryPHPUnitIntegrationAssertPostConditions' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/Adapter/Phpunit/MockeryPHPUnitIntegrationAssertPostConditions.php',
         'Mockery\\Adapter\\Phpunit\\MockeryTestCase' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/Adapter/Phpunit/MockeryTestCase.php',

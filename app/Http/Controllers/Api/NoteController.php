@@ -3,14 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Traits\SunatTrait;
-use Illuminate\Http\Request;
-use Greenter\Report\XmlUtils;
-
 use App\Services\SunatService;
+use App\Traits\SunatTrait;
+use Greenter\Report\XmlUtils;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class InvoiceController extends Controller
+class NoteController extends Controller
 {
    use SunatTrait;
    public function send(Request $request)
@@ -46,14 +45,12 @@ class InvoiceController extends Controller
 
          $see = $sunat->getSee($certificate, $isDevelopment, $rucEmisor, $matches[1], $matches[2]);
 
-         $invoice = $sunat->getInvoice($data);
+         $note = $sunat->getNote($data);
 
-         $result = $see->send($invoice);
+         $result = $see->send($note);
 
          $response['xml'] = $see->getFactory()->getLastXml();
-
          $response['hash'] = (new XmlUtils())->getHashSign($response['xml']);
-
          $response['sunatResponse'] = $sunat->sunatResponse($result);
 
          return response()->json($response, 200);
@@ -91,6 +88,7 @@ class InvoiceController extends Controller
 
       $sunat = new SunatService();
 
+
       if (Storage::exists("credentials/{$rucEmisor}.txt")) {
 
          $fileContents = file_get_contents(Storage::path("credentials/{$rucEmisor}.txt"));
@@ -98,9 +96,9 @@ class InvoiceController extends Controller
 
          $see = $sunat->getSee($certificate, $isDevelopment, $rucEmisor, $matches[1], $matches[2]);
 
-         $invoice = $sunat->getInvoice($data);
+         $note = $sunat->getNote($data);
 
-         $response['xml'] = $see->getXmlSigned($invoice);
+         $response['xml'] = $see->getXmlSigned($note);
          $response['hash'] = (new XmlUtils())->getHashSign($response['xml']);
 
          return response()->json($response, 200);
@@ -110,6 +108,7 @@ class InvoiceController extends Controller
             'error' => 'No se encontró el usuario y contraseña para el RUC: ' . $rucEmisor
          ]);
       }
+
    }
 
    public function pdf(Request $request)
@@ -131,6 +130,7 @@ class InvoiceController extends Controller
       //****************************************
 
       $data = request()->all();
+
       $this->setTotales($data);
       $this->setLegends($data);
 
@@ -142,11 +142,12 @@ class InvoiceController extends Controller
          preg_match('/usuario:(.*),contraseña:(.*)/', $fileContents, $matches);
 
          $see = $sunat->getSee($certificate, $isDevelopment, $rucEmisor, $matches[1], $matches[2]);
-         $invoice = $sunat->getInvoice($data);
-         $response['xml'] = $see->getXmlSigned($invoice);
+         $note = $sunat->getNote($data);
+
+         $response['xml'] = $see->getXmlSigned($note);
          $hash = (new XmlUtils())->getHashSign($response['xml']);
 
-         return $sunat->getHtmlReport($invoice, $rucEmisor, $hash);
+         return $sunat->getHtmlReport($note, $rucEmisor, $hash);
 
       } else {
          return response()->json([
